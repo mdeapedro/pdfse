@@ -47,13 +47,17 @@ class WordSpace:
             return current_word.text
 
 
-    def check_current_word_regex(self, pattern: str) -> bool:
+    def check_current_word_matches_regex(self, pattern: str) -> bool:
         current_word = self.get_current_word()
         if not current_word:
             return False
         regex = re.compile(pattern, re.IGNORECASE)
         match = bool(regex.search(current_word.text))
         return match
+
+
+    def check_current_word_does_not_match_regex(self, pattern: str) -> bool:
+        return not self.check_current_word_matches_regex(pattern)
 
 
     def collect(self):
