@@ -25,7 +25,7 @@ class WordSpace:
         self.cursor = (center_x, center_y)
 
 
-    def _move_to_next(self, words: list[Word], pos: int):
+    def _move_to_pos(self, words: list[Word], pos: int):
         if not words:
             return
         pos = max(0, min(pos, len(words) - 1))
@@ -82,12 +82,12 @@ class WordSpace:
     def anchor_to_regex(self, pattern: str, occurrence: int = 0):
         regex = re.compile(pattern)
         matches = [word for word in self.words if regex.search(word.text)]
-        self._move_to_next(matches, occurrence)
+        self._move_to_pos(matches, occurrence)
 
 
     def anchor_to_text(self, text: str, occurrence: int = 0):
         matches = [word for word in self.words if word.text == text]
-        self._move_to_next(matches, occurrence)
+        self._move_to_pos(matches, occurrence)
 
 
     def anchor_to_nearest(self):
@@ -111,7 +111,7 @@ class WordSpace:
             if x1 <= cx and y0 <= cy <= y1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0], reverse=True)
-        self._move_to_next(matches, words)
+        self._move_to_pos(matches, words)
 
 
     def move_top(self, words: int = 1):
@@ -122,7 +122,7 @@ class WordSpace:
             if y1 <= cy and x0 <= cx <= x1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1], reverse=True)
-        self._move_to_next(matches, words)
+        self._move_to_pos(matches, words)
 
 
     def move_right(self, words: int = 1):
@@ -133,7 +133,7 @@ class WordSpace:
             if cx <= x0 and y0 <= cy <= y1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0])
-        self._move_to_next(matches, words)
+        self._move_to_pos(matches, words)
 
 
     def move_bottom(self, words: int = 1):
@@ -144,7 +144,7 @@ class WordSpace:
             if cy <= y0 and x0 <= cx <= x1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1])
-        self._move_to_next(matches, words)
+        self._move_to_pos(matches, words)
 
 
     def get_current_sentence(self, add_left_words: bool=True) -> list[Word]:
