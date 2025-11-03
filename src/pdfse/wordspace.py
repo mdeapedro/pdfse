@@ -65,6 +65,28 @@ class WordSpace:
         self._move_to_next(matches, occurrence)
 
 
+    def move_left(self, words: int = 1):
+        cx, cy = self.cursor
+        matches: list[Word] = []
+        for word in self.words:
+            _, y0, x1, y1 = word.bbox
+            if x1 <= cx and y0 <= cy <= y1:
+                matches.append(word)
+        matches.sort(key=lambda word: word.bbox[0], reverse=True)
+        self._move_to_next(matches, words)
+
+
+    def move_top(self, words: int = 1):
+        cx, cy = self.cursor
+        matches: list[Word] = []
+        for word in self.words:
+            x0, _, x1, y1 = word.bbox
+            if y1 <= cy and x0 <= cx <= x1:
+                matches.append(word)
+        matches.sort(key=lambda word: word.bbox[1], reverse=True)
+        self._move_to_next(matches, words)
+
+
     def move_right(self, words: int = 1):
         cx, cy = self.cursor
         matches: list[Word] = []
@@ -73,4 +95,15 @@ class WordSpace:
             if cx <= x0 and y0 <= cy <= y1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0])
+        self._move_to_next(matches, words)
+
+
+    def move_bottom(self, words: int = 1):
+        cx, cy = self.cursor
+        matches: list[Word] = []
+        for word in self.words:
+            x0, y0, x1, _ = word.bbox
+            if cy <= y0 and x0 <= cx <= x1:
+                matches.append(word)
+        matches.sort(key=lambda word: word.bbox[1])
         self._move_to_next(matches, words)
