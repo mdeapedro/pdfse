@@ -114,7 +114,7 @@ class WordSpace:
         self._move_to_pos(matches, words)
 
 
-    def move_top(self, words: int = 1):
+    def move_above(self, words: int = 1):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
@@ -136,7 +136,7 @@ class WordSpace:
         self._move_to_pos(matches, words)
 
 
-    def move_bottom(self, words: int = 1):
+    def move_below(self, words: int = 1):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
@@ -145,6 +145,18 @@ class WordSpace:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1])
         self._move_to_pos(matches, words)
+
+
+    def move_next(self, words: int = 1):
+        cx, cy = self.cursor
+        pos = -1
+        for idx, word in enumerate(self.words):
+            x0, y0, x1, y1 = word.bbox
+            if x0 <= cx <= x1 and y0 <= cy <= y1:
+                pos = idx
+        if pos == -1:
+            return
+        self._move_to_pos(self.words, pos + words)
 
 
     def get_current_sentence(self, add_left_words: bool=True) -> list[Word]:
