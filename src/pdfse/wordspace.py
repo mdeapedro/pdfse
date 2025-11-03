@@ -66,13 +66,17 @@ class WordSpace:
             self.text += text + " "
 
 
+    def erase_text(self):
+        self.text = ""
+
+
     def get_text(self) -> str:
         return self.text[:-1]
 
 
     def dump_text(self) -> str:
         text = self.get_text()
-        self.text = ""
+        self.erase_text()
         return text
 
 
