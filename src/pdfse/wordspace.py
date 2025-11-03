@@ -176,6 +176,12 @@ class WordSpace:
         self._move_to_pos(self.words, pos + words)
 
 
+    def collect_sentence(self, add_left_words: bool=True):
+        for word in self.get_current_sentence(add_left_words):
+            text = word.text
+            self.text += text + " "
+
+
     def get_current_sentence(self, add_left_words: bool=True) -> list[Word]:
         cx, cy = self.cursor
         current_word = None
