@@ -31,12 +31,18 @@ class WordSpace:
         self._move_to_word(word)
 
 
-    def read_cursor(self) -> str | None:
+    def get_current_word(self) -> Word | None:
         cx, cy = self.cursor
         for word in self.words:
             x0, y0, x1, y1 = word.bbox
             if x0 <= cx <= x1 and y0 <= cy <= y1:
-                return word.text
+                return word
+
+
+    def read_cursor(self) -> str | None:
+        current_word = self.get_current_word()
+        if current_word:
+            return current_word.text
 
 
     def collect(self):
