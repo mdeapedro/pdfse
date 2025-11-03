@@ -10,10 +10,15 @@ class Word:
 
 
 class WordSpace:
-    def __init__(self):
-        self.words: list[Word] = []
+    def __init__(self, words: list[Word]):
+        self.words: list[Word] = words
         self.cursor: tuple[float, float] = (0.0, 0.0)
         self.text: str = ""
+        self.max_x: float = 0.0
+        self.max_y: float = 0.0
+        for word in words:
+            self.max_x = max(self.max_x, word.bbox[2])
+            self.max_y = max(self.max_y, word.bbox[3])
 
 
     def _move_to_word(self, word: Word):
