@@ -66,6 +66,22 @@ class WordSpace:
         return text
 
 
+    def move_cursor_to_corner_left(self):
+        self.cursor = (0.0, self.cursor[1])
+
+
+    def move_cursor_to_corner_right(self):
+        self.cursor = (self.max_x, self.cursor[1])
+
+
+    def move_cursor_to_corner_top(self):
+        self.cursor = (self.cursor[0], 0.0)
+
+
+    def move_cursor_to_corner_bottom(self):
+        self.cursor = (self.cursor[0], self.max_y)
+
+
     def anchor_to_regex(self, pattern: str, occurrence: int = 0):
         regex = re.compile(pattern)
         matches = [word for word in self.words if regex.search(word.text)]
