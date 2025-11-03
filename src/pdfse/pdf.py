@@ -1,11 +1,12 @@
 import fitz
 
-def generate_annotated_image(input_path: str) -> bytes:
+def generate_annotated_image(input_path: str, blank=False) -> bytes:
     """
     Generates an IMAGE (e.g., PNG) containing the text of the original PDF
     surrounded by enumerated rectangles.
 
     :param input_path: Path to the input PDF.
+    :param blank: If True, recreates text on a blank page; else annotates original.
     :return: Bytes of the output image (PNG format).
     """
     # Open the input PDF
@@ -18,8 +19,12 @@ def generate_annotated_image(input_path: str) -> bytes:
     page_rect = page.rect
 
     # Create a new PDF (in memory)
-    new_doc = fitz.open()
-    new_page = new_doc.new_page(width=page_rect.width, height=page_rect.height)
+    if blank:
+        new_doc = fitz.open()
+        new_page = new_doc.new_page(width=page_rect.width, height=page_rect.height)
+    else:
+        new_doc = doc
+        new_page = page
 
     # Extract text structure
     text_dict = page.get_text("dict")
@@ -46,7 +51,8 @@ def generate_annotated_image(input_path: str) -> bytes:
         origin = fitz.Point(span["origin"])
 
         # Insert the text in Helvetica, same size, black color
-        new_page.insert_text(origin, text, fontsize=font_size, fontname="helvetica", color=(0, 0, 0))
+        if blank:
+            new_page.insert_text(origin, text, fontsize=font_size, fontname="helvetica", color=(0, 0, 0))
 
         # Draw red bounding box (thin line)
         new_page.draw_rect(bbox, color=(1, 0, 0), width=0.5)
@@ -82,6 +88,7 @@ def generate_annotated_image(input_path: str) -> bytes:
     image_bytes = pix.tobytes("png")
 
     new_doc.close()
-    doc.close()
+    if blank:
+        doc.close()
 
     return image_bytes
