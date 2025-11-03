@@ -132,3 +132,50 @@ class WordSpace:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1])
         self._move_to_next(matches, words)
+
+
+    def get_current_sentence(self, add_left_words: bool=True) -> list[Word]:
+        cx, cy = self.cursor
+        current_word = None
+        for word in self.words:
+            x0, y0, x1, y1 = word.bbox
+            if x0 <= cx <= x1 and y0 <= cy <= y1:
+                current_word = word
+                break
+        if not current_word:
+            return []
+        left_words = []
+        if add_left_words:
+            current = current_word
+            while True:
+                matches = [w for w in self.words if w.bbox[2] <= current.bbox[0] and w.bbox[1] <= cy <= w.bbox[3]]
+                if not matches:
+                    break
+                next_left = max(matches, key=lambda w: w.bbox[0])
+                height_next = next_left.bbox[3] - next_left.bbox[1]
+                height_current = current.bbox[3] - current.bbox[1]
+                if abs(height_next - height_current) / max(height_next, height_current) > 0.1:
+                    break
+                gap = current.bbox[0] - next_left.bbox[2]
+                if gap > height_current:
+                    break
+                left_words.append(next_left)
+                current = next_left
+        left_words.reverse()
+        right_words = []
+        current = current_word
+        while True:
+            matches = [w for w in self.words if current.bbox[2] <= w.bbox[0] and w.bbox[1] <= cy <= w.bbox[3]]
+            if not matches:
+                break
+            next_right = min(matches, key=lambda w: w.bbox[0])
+            height_next = next_right.bbox[3] - next_right.bbox[1]
+            height_current = current.bbox[3] - current.bbox[1]
+            if abs(height_next - height_current) / max(height_next, height_current) > 0.1:
+                break
+            gap = next_right.bbox[0] - current.bbox[2]
+            if gap > height_current:
+                break
+            right_words.append(next_right)
+            current = next_right
+        return left_words + [current_word] + right_words
