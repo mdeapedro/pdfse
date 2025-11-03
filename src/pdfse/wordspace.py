@@ -70,6 +70,7 @@ class WordSpace:
         matches: list[Word] = []
         for word in self.words:
             x0, y0, _, y1 = word.bbox
-            if x0 <= cx and y0 <= cy <= y1:
+            if cx <= x0 and y0 <= cy <= y1:
                 matches.append(word)
+        matches.sort(key=lambda word: word.bbox[0])
         self._move_to_next(matches, words)
