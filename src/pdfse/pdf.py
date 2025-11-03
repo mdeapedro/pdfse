@@ -1,12 +1,12 @@
 import fitz
 
-def generate_annotated_pdf(input_path: str, output_path: str) -> None:
+def generate_annotated_image(input_path: str, output_path: str) -> None:
     """
-    Generates a new PDF containing just the text of the original surrounded
-    by enumerated rectangles.
+    Generates an IMAGE (e.g., PNG) containing the text of the original PDF
+    surrounded by enumerated rectangles.
 
     :param input_path: Path to the input PDF.
-    :param output_path: Path to save the output PDF.
+    :param output_path: Path to save the output image (e.g., 'output.png').
     """
     # Open the input PDF
     doc = fitz.open(input_path)
@@ -17,12 +17,9 @@ def generate_annotated_pdf(input_path: str, output_path: str) -> None:
     # Get page dimensions
     page_rect = page.rect
 
-    # Create a new PDF
+    # Create a new PDF (in memory)
     new_doc = fitz.open()
-    new_page = new_doc.new_page(
-        width=page_rect.width,
-        height=page_rect.height
-    )
+    new_page = new_doc.new_page(width=page_rect.width, height=page_rect.height)
 
     # Extract text structure
     text_dict = page.get_text("dict")
@@ -77,7 +74,12 @@ def generate_annotated_pdf(input_path: str, output_path: str) -> None:
         # Insert the red number
         new_page.insert_text(insert_point, label_text, fontsize=label_fontsize, fontname=label_fontname, color=label_color)
 
-    # Save the new PDF
-    new_doc.save(output_path)
+    dpi = 300
+    zoom = dpi / 72  # 72 is the PDF standard DPI
+    mat = fitz.Matrix(zoom, zoom)
+
+    pix = new_doc[0].get_pixmap(matrix=mat)
+    pix.save(output_path)
+
     new_doc.close()
     doc.close()
