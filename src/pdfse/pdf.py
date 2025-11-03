@@ -1,12 +1,12 @@
 import fitz
 
-def generate_annotated_image(input_path: str, output_path: str) -> None:
+def generate_annotated_image(input_path: str) -> bytes:
     """
     Generates an IMAGE (e.g., PNG) containing the text of the original PDF
     surrounded by enumerated rectangles.
 
     :param input_path: Path to the input PDF.
-    :param output_path: Path to save the output image (e.g., 'output.png').
+    :return: Bytes of the output image (PNG format).
     """
     # Open the input PDF
     doc = fitz.open(input_path)
@@ -79,7 +79,9 @@ def generate_annotated_image(input_path: str, output_path: str) -> None:
     mat = fitz.Matrix(zoom, zoom)
 
     pix = new_doc[0].get_pixmap(matrix=mat)
-    pix.save(output_path)
+    image_bytes = pix.tobytes("png")
 
     new_doc.close()
     doc.close()
+
+    return image_bytes
