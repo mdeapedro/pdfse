@@ -61,7 +61,7 @@ class WordSpace:
 
 
     def anchor_to_text(self, text: str, occurrence: int = 0):
-        matches = [word for word in self.words if word == text]
+        matches = [word for word in self.words if word.text == text]
         self._move_to_next(matches, occurrence)
 
 
