@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from pdfse.utils import point_to_bbox_squared_distance
 
 
 @dataclass
@@ -63,6 +64,19 @@ class WordSpace:
     def anchor_to_text(self, text: str, occurrence: int = 0):
         matches = [word for word in self.words if word.text == text]
         self._move_to_next(matches, occurrence)
+
+
+    def anchor_to_nearest(self):
+        if not self.words:
+            return
+        nearest_word = self.words[0]
+        min_sq_dist = 1e18
+        for word in self.words:
+            sq_dist = point_to_bbox_squared_distance(self.cursor, word.bbox)
+            if (sq_dist < min_sq_dist):
+                nearest_word = word
+                min_sq_dist = sq_dist
+        self._move_to_word(nearest_word)
 
 
     def move_left(self, words: int = 1):
