@@ -39,12 +39,19 @@ class WordSpace:
 
 
     def collect(self):
-        cx, cy = self.cursor
-        for word in self.words:
-            x0, y0, x1, y1 = word.bbox
-            if x0 <= cx <= x1 and y0 <= cy <= y1:
-                self.text += word.text + " "
-                return
+        text = self.read_cursor()
+        if text:
+            self.text += text + " "
+
+
+    def get_text(self) -> str:
+        return self.text[:-1]
+
+
+    def dump_text(self) -> str:
+        text = self.get_text()
+        self.text = ""
+        return text
 
 
     def anchor_to_regex(self, pattern: str, occurrence: int = 0):
