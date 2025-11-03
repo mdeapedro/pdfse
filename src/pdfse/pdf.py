@@ -1,94 +1,98 @@
 import fitz
+from pathlib import Path
+from pdfse.wordspace import Word, WordSpace
 
-def generate_annotated_image(input_path: str, blank=False) -> bytes:
-    """
-    Generates an IMAGE (e.g., PNG) containing the text of the original PDF
-    surrounded by enumerated rectangles.
 
-    :param input_path: Path to the input PDF.
-    :param blank: If True, recreates text on a blank page; else annotates original.
-    :return: Bytes of the output image (PNG format).
-    """
-    # Open the input PDF
-    doc = fitz.open(input_path)
+def render_pdf(pdf_path: Path) -> bytes:
+    doc = fitz.open(pdf_path)
+    page = doc[0]
+    dpi = 300
+    zoom = dpi / 72  # 72 is the PDF standard DPI
+    mat = fitz.Matrix(zoom, zoom)
+    pix = page.get_pixmap(matrix=mat)
+    image_bytes = pix.tobytes("png")
+    doc.close()
+    return image_bytes
 
-    # Assuming single page as per problem constraints
+
+def render_pdf_text(pdf_path: Path) -> bytes:
+    doc = fitz.open(pdf_path)
     page = doc[0]
 
-    # Get page dimensions
-    page_rect = page.rect
+    new_doc = fitz.open()
+    new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
 
-    # Create a new PDF (in memory)
-    if blank:
-        new_doc = fitz.open()
-        new_page = new_doc.new_page(width=page_rect.width, height=page_rect.height)
-    else:
-        new_doc = doc
-        new_page = page
-
-    # Extract text structure
-    text_dict = page.get_text("dict")
-
-    # Collect all spans
-    spans = []
+    text_dict: dict = page.get_text("dict") # type: ignore
     for block in text_dict["blocks"]:
-        if "lines" in block:
-            for line in block["lines"]:
-                for span in line["spans"]:
-                    spans.append(span)
+        if block["type"] != 0:
+            continue  # Skip not text blocks
+        for line in block["lines"]:
+            for span in line["spans"]:
+                text = span["text"].strip()
+                if not text:
+                    continue
 
-    # Sort spans: top-to-bottom (increasing y0), then left-to-right (increasing x0)
-    spans.sort(key=lambda s: (s["bbox"][1], s["bbox"][0]))
+                font = span.get("font", "helv")
+                size = span["size"]
+                color = span.get("color", 0)
+                x0, _, _, y1 = span["bbox"]
+                insert_point = (x0, y1)
 
-    # Process each span
-    for idx, span in enumerate(spans, start=1):
-        bbox = fitz.Rect(span["bbox"])
-        text = span["text"].strip()  # Strip to avoid extra spaces
-        if not text:
-            continue  # Skip empty texts
+                new_page.insert_text(
+                    insert_point,
+                    text,
+                    fontsize=size,
+                    fontname=font,
+                    color=color,
+                )
+    dpi = 300
+    zoom = dpi / 72  # 72 is the PDF standard DPI
+    mat = fitz.Matrix(zoom, zoom)
+    pix = new_page.get_pixmap(matrix=mat)
+    image_bytes = pix.tobytes("png")
+    doc.close()
+    new_doc.close()
+    return image_bytes
 
-        font_size = span["size"]
-        origin = fitz.Point(span["origin"])
+def generate_marked_image(pdf_path: Path) -> bytes:
+    """
+    Render the PDF with its words surrounded by red rectangles.
+    """
+    doc = fitz.open(pdf_path)
+    page = doc[0]
 
-        # Insert the text in Helvetica, same size, black color
-        if blank:
-            new_page.insert_text(origin, text, fontsize=font_size, fontname="helvetica", color=(0, 0, 0))
-
-        # Draw red bounding box (thin line)
-        new_page.draw_rect(bbox, color=(1, 0, 0), width=0.5)
-
-        # For the enumeration label with white rectangular background
-        label_fontsize = 8
-        label_text = str(idx)
-        label_fontname = "helvetica"
-        label_color = (1, 0, 0)  # Red
-        text_length = fitz.get_text_length(label_text, fontname=label_fontname, fontsize=label_fontsize)
-        label_height = label_fontsize
-        label_width = text_length
-
-        # Label rect in the top-left corner
-        label_rect = fitz.Rect(bbox.x0, bbox.y0, bbox.x0 + label_width, bbox.y0 + label_height)
-
-        # Draw white filled rectangle
-        new_page.draw_rect(label_rect, color=(1, 0, 0), fill=(1, 1, 1), width=0.5)
-
-        # Insert point: baseline at bottom with padding
-        insert_x = bbox.x0
-        insert_y = bbox.y0 + label_height
-        insert_point = fitz.Point(insert_x, insert_y)
-
-        # Insert the red number
-        new_page.insert_text(insert_point, label_text, fontsize=label_fontsize, fontname=label_fontname, color=label_color)
+    words: dict = page.get_text("words") # type: ignore
+    for word in words:
+        x0, y0, x1, y1, *_ = word
+        bbox = fitz.Rect(x0, y0, x1, y1)
+        page.draw_rect(bbox, color=(1, 0, 0), width=0.5)
 
     dpi = 300
     zoom = dpi / 72  # 72 is the PDF standard DPI
     mat = fitz.Matrix(zoom, zoom)
 
-    pix = new_doc[0].get_pixmap(matrix=mat)
+    pix = page.get_pixmap(matrix=mat)
     image_bytes = pix.tobytes("png")
 
-    new_doc.close()
-    if blank:
-        doc.close()
-
+    doc.close()
     return image_bytes
+
+
+def get_pdf_wordspace(pdf_path: Path, scale: float = 1000) -> WordSpace:
+    """
+    Create a WordSpace object from a PDF
+    """
+    doc = fitz.open(pdf_path)
+    page = doc[0]
+
+    page_width: int = page.rect.width
+    page_height: int = page.rect.height
+
+    words: list[Word] = []
+    page_words: dict = page.get_text("words", sort=True) # type: ignore
+    for word in page_words:
+        x0, y0, x1, y1, text, *_ = word
+        words.append(Word(text, (x0, y0, x1, y1)))
+
+    doc.close()
+    return WordSpace(words, page_width, page_height)
