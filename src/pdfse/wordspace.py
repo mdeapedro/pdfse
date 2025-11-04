@@ -182,12 +182,11 @@ class WordSpace:
         matches: list[Word] = []
         for word in self.words:
             if (word.bbox[2] < ref_bbox[0] and
-                word.bbox[3] > ref_bbox[1] and
-                word.bbox[1] < ref_bbox[3]):
+                word.bbox[3] >= ref_bbox[1] and
+                word.bbox[1] <= ref_bbox[3]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0], reverse=True)
         self._move_to_pos(matches, jump)
-
 
     def move_up(self, jump: int = 0):
         current_word = self._get_current_word()
@@ -199,12 +198,11 @@ class WordSpace:
         matches: list[Word] = []
         for word in self.words:
             if (word.bbox[3] < ref_bbox[1] and
-                word.bbox[2] > ref_bbox[0] and
-                word.bbox[0] < ref_bbox[2]):
+                word.bbox[2] >= ref_bbox[0] and
+                word.bbox[0] <= ref_bbox[2]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1], reverse=True)
         self._move_to_pos(matches, jump)
-
 
     def move_right(self, jump: int = 0):
         current_word = self._get_current_word()
@@ -216,12 +214,11 @@ class WordSpace:
         matches: list[Word] = []
         for word in self.words:
             if (word.bbox[0] > ref_bbox[2] and
-                word.bbox[3] > ref_bbox[1] and
-                word.bbox[1] < ref_bbox[3]):
+                word.bbox[3] >= ref_bbox[1] and
+                word.bbox[1] <= ref_bbox[3]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0])
         self._move_to_pos(matches, jump)
-
 
     def move_down(self, jump: int = 0):
         current_word = self._get_current_word()
@@ -233,8 +230,8 @@ class WordSpace:
         matches: list[Word] = []
         for word in self.words:
             if (word.bbox[1] > ref_bbox[3] and
-                word.bbox[2] > ref_bbox[0] and
-                word.bbox[0] < ref_bbox[2]):
+                word.bbox[2] >= ref_bbox[0] and
+                word.bbox[0] <= ref_bbox[2]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1])
         self._move_to_pos(matches, jump)
