@@ -173,44 +173,68 @@ class WordSpace:
 
 
     def move_left(self, jump: int = 0):
-        cx, cy = self.cursor
+        current_word = self._get_current_word()
+        if current_word:
+            ref_bbox = current_word.bbox
+        else:
+            cx, cy = self.cursor
+            ref_bbox = (cx, cy, cx, cy)
         matches: list[Word] = []
         for word in self.words:
-            _, y0, x1, y1 = word.bbox
-            if x1 < cx and y0 <= cy <= y1:
+            if (word.bbox[2] < ref_bbox[0] and
+                word.bbox[3] > ref_bbox[1] and
+                word.bbox[1] < ref_bbox[3]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0], reverse=True)
         self._move_to_pos(matches, jump)
 
 
     def move_up(self, jump: int = 0):
-        cx, cy = self.cursor
+        current_word = self._get_current_word()
+        if current_word:
+            ref_bbox = current_word.bbox
+        else:
+            cx, cy = self.cursor
+            ref_bbox = (cx, cy, cx, cy)
         matches: list[Word] = []
         for word in self.words:
-            x0, _, x1, y1 = word.bbox
-            if y1 < cy and x0 <= cx <= x1:
+            if (word.bbox[3] < ref_bbox[1] and
+                word.bbox[2] > ref_bbox[0] and
+                word.bbox[0] < ref_bbox[2]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1], reverse=True)
         self._move_to_pos(matches, jump)
 
 
     def move_right(self, jump: int = 0):
-        cx, cy = self.cursor
+        current_word = self._get_current_word()
+        if current_word:
+            ref_bbox = current_word.bbox
+        else:
+            cx, cy = self.cursor
+            ref_bbox = (cx, cy, cx, cy)
         matches: list[Word] = []
         for word in self.words:
-            x0, y0, _, y1 = word.bbox
-            if cx < x0 and y0 <= cy <= y1:
+            if (word.bbox[0] > ref_bbox[2] and
+                word.bbox[3] > ref_bbox[1] and
+                word.bbox[1] < ref_bbox[3]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0])
         self._move_to_pos(matches, jump)
 
 
     def move_down(self, jump: int = 0):
-        cx, cy = self.cursor
+        current_word = self._get_current_word()
+        if current_word:
+            ref_bbox = current_word.bbox
+        else:
+            cx, cy = self.cursor
+            ref_bbox = (cx, cy, cx, cy)
         matches: list[Word] = []
         for word in self.words:
-            x0, y0, x1, _ = word.bbox
-            if cy < y0 and x0 <= cx <= x1:
+            if (word.bbox[1] > ref_bbox[3] and
+                word.bbox[2] > ref_bbox[0] and
+                word.bbox[0] < ref_bbox[2]):
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1])
         self._move_to_pos(matches, jump)
