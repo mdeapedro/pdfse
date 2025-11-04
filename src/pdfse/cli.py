@@ -2,13 +2,7 @@ import typer
 import json
 from pathlib import Path
 from typing_extensions import Annotated
-from dataclasses import dataclass
-
-@dataclass
-class Entry:
-    label: str
-    extraction_schema: dict[str, str]
-    pdf_path: Path
+from pdfse.main import Entry
 
 app = typer.Typer()
 
