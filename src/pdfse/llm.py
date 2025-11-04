@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-_client: openai.OpenAI | None = None
-def get_client() -> openai.OpenAI:
+_client: openai.AsyncOpenAI | None = None
+def get_client() -> openai.AsyncOpenAI:
     global _client
     if not _client:
-        _client = openai.OpenAI()
+        _client = openai.AsyncOpenAI()
     return _client
 
 
@@ -20,7 +20,7 @@ def _encode_image_to_base64(imageb: bytes) -> str:
     return f"data:image/png;base64,{base64_string}"
 
 
-def ask_for_heuristic(
+async def ask_for_heuristic(
     extraction_schema: dict,
     imagesb: list[bytes]
 ) -> dict[str, list]:
@@ -45,7 +45,7 @@ def ask_for_heuristic(
             }
         })
 
-    response = client.chat.completions.create(
+    response = await client.chat.completions.create(
         model="gpt-5-mini",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
