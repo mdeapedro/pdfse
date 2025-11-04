@@ -52,7 +52,7 @@ def ask_for_heuristic(
             {"role": "user", "content": user_content} # type: ignore
         ],
         response_format={"type": "json_object"},
-        max_tokens=4096,
+        max_completion_tokens=4096,
         temperature=0.0
     )
     response_content = response.choices[0].message.content
