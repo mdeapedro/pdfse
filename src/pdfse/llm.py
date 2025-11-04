@@ -44,6 +44,7 @@ def ask_for_heuristic(
                 "detail": "high"
             }
         })
+
     response = client.chat.completions.create(
         model="gpt-5-mini",
         messages=[
@@ -55,7 +56,10 @@ def ask_for_heuristic(
         temperature=0.0
     )
     response_content = response.choices[0].message.content
-    heuristic = json.loads(response_content) # type: ignore
+    if not response_content:
+        raise ValueError("LLM response was empty")
+
+    heuristic = json.loads(response_content)
     return heuristic
 
 
@@ -98,6 +102,58 @@ Sua saída *deve* seguir esta estrutura:
 
 ---
 
+**EXEMPLO (ONE-SHOT)**
+
+* **Schema Recebido:**
+    ```json
+    {
+      "nome": "Nome do profissional",
+      "inscricao": "Número de inscrição"
+    }
+    ```
+* **Contexto Visual:** Uma imagem mostrando "SON GOKU" no topo, e mais abaixo, o rótulo "Inscrição" e logo abaixo dele o número "101943".
+
+* **JSON de Saída Esperado (Sua Resposta):**
+    ```json
+    {
+      "nome": [
+        {
+          "type": "command",
+          "name": "move_first",
+          "args": {}
+        },
+        {
+          "type": "command",
+          "name": "collect_trailing_sentence",
+          "args": {}
+        }
+      ],
+      "inscricao": [
+        {
+          "type": "command",
+          "name": "anchor_to_text",
+          "args": {
+            "text": "Inscrição"
+          }
+        },
+        {
+          "type": "command",
+          "name": "move_down",
+          "args": {
+            "jump": 0
+          }
+        },
+        {
+          "type": "command",
+          "name": "collect",
+          "args": {}
+        }
+      ]
+    }
+    ```
+
+---
+
 **ESTRUTURA DOS COMANDOS**
 
 Existem 3 tipos de comandos que você pode usar nas listas:
@@ -136,6 +192,11 @@ Existem 3 tipos de comandos que você pode usar nas listas:
 
 **API WORDSPACE (MÉTODOS PERMITIDOS)**
 Use *exclusivamente* estes métodos.
+
+**O que é Normalização?**
+Quando `include_normalized: true` (o padrão), a busca ignora acentos e maiúsculas/minúsculas.
+(Ex: "Inscrição" bate com "inscricao", "NOME" bate com "nome").
+Use `include_normalized: false` se a distinção for crucial.
 
 **1. Métodos de Ancoragem (Seu Ponto de Partida Preferencial)**
 * `anchor_to_regex(pattern: str, occurrence: int = 0, include_normalized: bool = True)`: Move o cursor para a N-ésima palavra que bate com o regex.
