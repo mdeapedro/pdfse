@@ -97,13 +97,58 @@ Your output *must* follow this structure:
     * **NEVER** use fragile navigation from the top-left (e.g., `move_first() -> move_down() -> move_down()`). This will fail 100% of the time if the layout changes.
     * All navigation *must* be relative to a strong, constant text anchor.
 
-2.  **Independence:** Each command list for a field (e.g., `"name"`) is executed independently. **Assume the cursor is at (0, 0) at the start of EACH field's execution.**
+2.  **CRITICAL: Use Control Flow (If/Loop) for Precision & Robustness.**
+    * Simple navigation (e.g., `anchor -> move_right -> collect`) can fail. Use `if` and `loop` to build robust heuristics that can handle variations.
+    * **Use `loop` for Multi-Line or Repeated Data:** When data spans multiple lines (like an address) or you need to collect items until a "stop" word.
+    * **Loop Example:** To collect all lines of an address *until* you hit the next label (e.g., "Phone:"):
+        ```json
+        [
+          {"type": "command", "name": "anchor_to_text", "args": {"text": "Address:"}},
+          {"type": "command", "name": "move_down", "args": {}},
+          {
+            "type": "loop",
+            "condition": {
+              "name": "check_current_word_matches_regex",
+              "args": {"pattern": "Phone:"},
+              "check": false
+            },
+            "body": [
+              {"type": "command", "name": "collect_whole_sentence", "args": {}},
+              {"type": "command", "name": "move_down", "args": {}}
+            ]
+          }
+        ]
+        ```
+    * **Use `if` for Conditional Logic:** When a value might be missing, optional, or have a specific state (e.g., 'N/A', 'Pending').
+    * **If Example:** To avoid collecting 'N/A' for an optional field:
+        ```json
+        [
+          {"type": "command", "name": "anchor_to_text", "args": {"text": "Spouse Name:"}},
+          {"type": "command", "name": "move_right", "args": {}},
+          {
+            "type": "if",
+            "condition": {
+              "name": "check_current_word_matches_regex",
+              "args": {"pattern": "(N/A|Not Applicable)"},
+              "check": false
+            },
+            "then": [
+              {"type": "command", "name": "collect_trailing_sentence", "args": {}}
+            ],
+            "else": [
+              {"type": "command", "name": "clear_text_buffer", "args": {}}
+            ]
+          }
+        ]
+        ```
 
-3.  **Efficiency:** Use the fewest commands possible *after* anchoring.
+3.  **Independence:** Each command list for a field (e.g., `"name"`) is executed independently. **Assume the cursor is at (0, 0) at the start of EACH field's execution.**
 
-4.  **Precise Collection:** Use `collect` methods *only* on the words that make up the final value. Do not collect the labels.
+4. **Accuracy Over Efficiency:** Prioritize accuracy above all—do not economize on the number of commands or actions. Use as many commands, loops, and ifs as necessary to ensure robust extraction, even if it results in longer sequences. The goal is 100% precision across variable layouts, not minimalism.**
 
-5.  **Graceful Failure:** If a schema field (e.g., "phone") is not found in the PDF layout, its command sequence should simply result in no `collect` calls (or a `clear_text_buffer` call), returning `null` or `""`.
+5.  **Precise Collection:** Use `collect` methods *only* on the words that make up the final value. Do not collect the labels.
+
+6.  **Graceful Failure:** If a schema field (e.g., "phone") is not found in the PDF layout, its command sequence should simply result in no `collect` calls (or a `clear_text_buffer` call), returning `null` or `""`.
 
 ---
 
@@ -171,6 +216,7 @@ There are 3 types of commands you can use in the lists:
     }
 
 2.  **Loop (Conditional Repetition):**
+    * **Use Case:** Collect multi-line data or iterate until a condition is met.
     {
         "type": "loop",
         "condition": {
@@ -182,6 +228,7 @@ There are 3 types of commands you can use in the lists:
     }
 
 3.  **If (Conditional):**
+    * **Use Case:** Handle optional data or avoid collecting "placeholder" text.
     {
         "type": "if",
         "condition": {
@@ -221,7 +268,7 @@ Use `include_normalized: false` if the distinction is crucial.
 * `move_down(jump: int = 0)`: Moves to the next word below in the same column.
 * `move_up(jump: int = 0)`: Moves to the next word above in the same column.
 * `move_to_sentence_begin()`: Moves to the first word of the current sentence (on the same line).
-* `move_to_sentence_end()`: Moves to the last word of the current sentence (on the same line).
+* `move_to_sentence_end()`: Moves to the last word of the new sentence (on the same line).
 
 **3. Collection Methods (Text Capture)**
 * `collect()`: Collects the text of the word currently under the cursor.
