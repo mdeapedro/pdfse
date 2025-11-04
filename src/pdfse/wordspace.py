@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pdfse.utils import point_to_bbox_squared_distance, normalize_text
 
 
-@dataclass
+@dataclass(frozen=True)
 class Word:
     text: str
     bbox: tuple[float, float, float, float]
