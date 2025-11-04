@@ -14,7 +14,7 @@ class Entry:
     pdf_path: Path
 
 
-def load_heuristics_cache():
+def load_heuristics_cache() -> dict:
     if not CACHE_FILE.exists():
         return {}
     try:
@@ -58,10 +58,20 @@ def load_entries(dataset: Path) -> list[Entry]:
     return entries
 
 
-def get_missing_fields(entries: list[Entry]):
-    labels: dict[str, dict] = {}
+def get_combined_fields(entries: list[Entry]):
+    label_fields: dict[str, dict] = {}
     for entry in entries:
-        labels[entry.label] = {}
+        label_fields[entry.label] = {}
     for entry in entries:
-        labels[entry.label].update(entry.extraction_schema)
-    return labels
+        label_fields[entry.label].update(entry.extraction_schema)
+    return label_fields
+
+
+def get_unknown_fields(entries: list[Entry]):
+    label_fields = get_combined_fields(entries)
+    heuristics = load_heuristics_cache()
+    for label in list(label_fields):
+        if heuristics.get(label):
+            del label_fields[label]
+    return label_fields
+
