@@ -11,7 +11,7 @@ _client: openai.AsyncOpenAI | None = None
 def get_client() -> openai.AsyncOpenAI:
     global _client
     if not _client:
-        _client = openai.AsyncOpenAI()
+        _client = openai.AsyncOpenAI(timeout=300.0)
     return _client
 
 
