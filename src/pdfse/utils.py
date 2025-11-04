@@ -1,3 +1,6 @@
+import unicodedata
+
+
 def point_to_segment_squared_distance(
     p: tuple[float, float],
     a: tuple[float, float],
@@ -47,3 +50,9 @@ def point_to_bbox_squared_distance(
     dist_sq_top = point_to_segment_squared_distance(p, top_a, top_b)
     min_dist_sq = min(dist_sq_left, dist_sq_right, dist_sq_bottom, dist_sq_top)
     return min_dist_sq
+
+
+def normalize_text(text):
+    normalized = unicodedata.normalize('NFKD', text)
+    without_accents = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    return without_accents.lower()
