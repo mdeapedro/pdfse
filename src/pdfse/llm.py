@@ -1,5 +1,65 @@
-def prompt() -> str:
-    return """Você é um assistente de IA especialista em extração de dados de PDFs. Sua tarefa é atuar como um "gerador de heurísticas" para um robô de navegação.
+import json
+import base64
+import openai
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+_client: openai.OpenAI | None = None
+def get_client() -> openai.OpenAI:
+    global _client
+    if not _client:
+        _client = openai.OpenAI()
+    return _client
+
+
+def _encode_image_to_base64(imageb: bytes) -> str:
+    base64_string = base64.b64encode(imageb).decode('utf-8')
+    return f"data:image/png;base64,{base64_string}"
+
+
+def ask_for_heuristic(
+    extraction_schema: dict,
+    imagesb: list[bytes]
+) -> dict[str, list]:
+    client = get_client()
+    user_content: list[dict] = [
+        {
+            "type": "text",
+            "text": f"""
+            Here is the extraction schema for this task. Please generate the JSON heuristic based on this schema and the provided images:
+
+            {json.dumps(extraction_schema, indent=2, ensure_ascii=False)}
+            """
+        }
+    ]
+    for imageb in imagesb:
+        base64_image_url = _encode_image_to_base64(imageb)
+        user_content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": base64_image_url,
+                "detail": "high"
+            }
+        })
+    response = client.chat.completions.create(
+        model="gpt-5-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_content} # type: ignore
+        ],
+        response_format={"type": "json_object"},
+        max_tokens=4096,
+        temperature=0.0
+    )
+    response_content = response.choices[0].message.content
+    heuristic = json.loads(response_content) # type: ignore
+    return heuristic
+
+
+SYSTEM_PROMPT = """Você é um assistente de IA especialista em extração de dados de PDFs. Sua tarefa é atuar como um "gerador de heurísticas" para um robô de navegação.
 
 **REGRA DE OURO: JSON PURO**
 Sua resposta deve ser **exclusivamente um JSON válido**. Nenhum texto, explicação, ou markdown (como ```json ... ```) deve ser usado. Apenas o JSON puro.
