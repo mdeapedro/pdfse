@@ -75,3 +75,16 @@ def get_unknown_fields(entries: list[Entry]):
             del label_fields[label]
     return label_fields
 
+
+def separate_good_entries(entries: list[Entry]) -> tuple[list[Entry], list[Entry]]: # Good entry means we have memoized all the heuristics to process it
+    heuristics = load_heuristics_cache()
+
+    good_entries = []
+    bad_entries = []
+    for entry in entries:
+        is_good = all(field in heuristics[entry.label] for field in entry.extraction_schema)
+        if is_good:
+            good_entries.append(entry)
+        else:
+            bad_entries.append(entry)
+    return good_entries, bad_entries
