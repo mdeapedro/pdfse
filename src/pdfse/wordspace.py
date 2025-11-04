@@ -143,19 +143,60 @@ class WordSpace:
 
     def anchor_to_regex(self, pattern: str, occurrence: int = 0, include_normalized: bool = True):
         if include_normalized:
-            regex = re.compile(normalize_text(pattern))
-            matches = [word for word in self.words if regex.search(normalize_text(word.text))]
+            word_texts = [normalize_text(word.text) for word in self.words]
+            regex_pattern = normalize_text(pattern)
         else:
-            regex = re.compile(pattern)
-            matches = [word for word in self.words if regex.search(word.text)]
-        self._move_to_pos(matches, occurrence)
+            word_texts = [word.text for word in self.words]
+            regex_pattern = pattern
+
+        full_text = ' '.join(word_texts)
+        regex = re.compile(regex_pattern, re.IGNORECASE)
+
+        word_starts = []
+        offset = 0
+        for text in word_texts:
+            word_starts.append(offset)
+            offset += len(text) + 1  # +1 for space
+
+        matches = []
+        for m in regex.finditer(full_text):
+            pos = m.start()
+            for i in range(len(word_starts) - 1, -1, -1):
+                if word_starts[i] <= pos:
+                    matches.append(self.words[i])
+                    break
+
+        # Remove duplicates if any
+        unique_matches = []
+        seen = set()
+        for word in matches:
+            if word not in seen:
+                unique_matches.append(word)
+                seen.add(word)
+
+        self._move_to_pos(unique_matches, occurrence)
 
 
     def anchor_to_text(self, text: str, occurrence: int = 0, include_normalized: bool = True):
-        if include_normalized:
-            matches = [word for word in self.words if normalize_text(word.text) == normalize_text(text)]
-        else:
-            matches = [word for word in self.words if word.text == text]
+        parts = text.split()
+        if not parts:
+            return
+        matches = []
+        for i in range(len(self.words) - len(parts) + 1):
+            match = True
+            for j in range(len(parts)):
+                word_text = self.words[i + j].text
+                part = parts[j]
+                if include_normalized:
+                    if normalize_text(word_text) != normalize_text(part):
+                        match = False
+                        break
+                else:
+                    if word_text != part:
+                        match = False
+                        break
+            if match:
+                matches.append(self.words[i])  # Anchor to the starting word of the phrase
         self._move_to_pos(matches, occurrence)
 
 
