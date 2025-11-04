@@ -108,7 +108,11 @@ class WordSpace:
             return False
         regex = re.compile(pattern, re.IGNORECASE)
         match = bool(regex.search(current_word.text))
-        return match if match else False if not fallback else self.check_current_word_matches_regex(normalize_text(pattern), False)
+        if match or not fallback:
+            return match
+        regex = re.compile(normalize_text(pattern), re.IGNORECASE)
+        match = bool(regex.search(normalize_text(current_word.text)))
+        return match
 
 
     def collect(self):
@@ -168,48 +172,48 @@ class WordSpace:
         self._move_to_word(nearest_word)
 
 
-    def move_left(self, words: int = 1):
+    def move_left(self, jump: int = 0):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
             _, y0, x1, y1 = word.bbox
-            if x1 <= cx and y0 <= cy <= y1:
+            if x1 < cx and y0 <= cy <= y1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0], reverse=True)
-        self._move_to_pos(matches, words)
+        self._move_to_pos(matches, jump)
 
 
-    def move_up(self, words: int = 1):
+    def move_up(self, jump: int = 0):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
             x0, _, x1, y1 = word.bbox
-            if y1 <= cy and x0 <= cx <= x1:
+            if y1 < cy and x0 <= cx <= x1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1], reverse=True)
-        self._move_to_pos(matches, words)
+        self._move_to_pos(matches, jump)
 
 
-    def move_right(self, words: int = 1):
+    def move_right(self, jump: int = 0):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
             x0, y0, _, y1 = word.bbox
-            if cx <= x0 and y0 <= cy <= y1:
+            if cx < x0 and y0 <= cy <= y1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0])
-        self._move_to_pos(matches, words)
+        self._move_to_pos(matches, jump)
 
 
-    def move_down(self, words: int = 1):
+    def move_down(self, jump: int = 0):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
             x0, y0, x1, _ = word.bbox
-            if cy <= y0 and x0 <= cx <= x1:
+            if cy < y0 and x0 <= cx <= x1:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1])
-        self._move_to_pos(matches, words)
+        self._move_to_pos(matches, jump)
 
 
     def move_first(self):
@@ -222,7 +226,7 @@ class WordSpace:
             self._move_to_word(self.words[-1])
 
 
-    def move_next(self, words: int = 1):
+    def move_next(self, jump: int = 0):
         cx, cy = self.cursor
         pos = -1
         for idx, word in enumerate(self.words):
@@ -231,10 +235,10 @@ class WordSpace:
                 pos = idx
         if pos == -1:
             return
-        self._move_to_pos(self.words, pos + words)
+        self._move_to_pos(self.words, pos + jump + 1)
 
 
-    def move_previous(self, words: int = 1):
+    def move_previous(self, jump: int = 0):
         cx, cy = self.cursor
         pos = -1
         for idx, word in enumerate(self.words):
@@ -243,7 +247,7 @@ class WordSpace:
                 pos = idx
         if pos == -1:
             return
-        self._move_to_pos(self.words, pos - words)
+        self._move_to_pos(self.words, pos - jump - 1)
 
 
     def move_to_sentence_begin(self):
@@ -259,17 +263,17 @@ class WordSpace:
 
 
     def collect_trailing_sentence(self):
+        self.collect()
         sentence_right = self._get_sentence_right()
         for word in sentence_right:
             self.text += word.text + " "
-        self.collect()
 
 
     def collect_leading_sentence(self):
-        self.collect()
         sentence_left = self._get_sentence_left()
         for word in sentence_left:
             self.text += word.text + " "
+        self.collect()
 
 
     def collect_whole_sentence(self):
