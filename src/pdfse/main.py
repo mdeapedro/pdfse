@@ -4,7 +4,8 @@ import random
 from pathlib import Path
 from dataclasses import dataclass
 from pdfse.llm import ask_for_heuristic
-from pdfse.pdf import render_pdf_text
+from pdfse.pdf import render_pdf_text, get_pdf_wordspace
+from pdfse.machine import HeuristicMachine
 
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -163,3 +164,32 @@ async def fetch_and_save_missing_heuristics(bad_entries: list[Entry], heuristics
         print("Heuristic cache updated.")
 
     return updated_heuristics
+
+
+def process_entry(entry: Entry, heuristics: dict) -> dict[str, str | None]:
+    try:
+        wordspace = get_pdf_wordspace(entry.pdf_path)
+        machine = HeuristicMachine(wordspace)
+
+        label_heuristic = heuristics.get(entry.label, {})
+
+        schema_fields = set(entry.extraction_schema.keys())
+
+        heuristic_for_entry = {
+            field: commands
+            for field, commands in label_heuristic.items()
+            if field in schema_fields
+        }
+
+        missing_fields = schema_fields - set(heuristic_for_entry.keys())
+
+        extracted_data = machine.run(heuristic_for_entry)
+
+        for field in missing_fields:
+            extracted_data[field] = None
+
+        return extracted_data
+
+    except Exception as e:
+        print(f"Error processing {entry.pdf_path.name}: {e}")
+        return {field: None for field in entry.extraction_schema}
