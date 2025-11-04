@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from pdfse.utils import point_to_bbox_squared_distance
+from pdfse.utils import point_to_bbox_squared_distance, normalize_text
 
 
 @dataclass
@@ -33,7 +33,7 @@ class WordSpace:
         self._move_to_word(word)
 
 
-    def get_current_word(self) -> Word | None:
+    def _get_current_word(self) -> Word | None:
         cx, cy = self.cursor
         for word in self.words:
             x0, y0, x1, y1 = word.bbox
@@ -41,43 +41,84 @@ class WordSpace:
                 return word
 
 
-    def read_cursor(self) -> str | None:
-        current_word = self.get_current_word()
+    def _read_cursor(self) -> str | None:
+        current_word = self._get_current_word()
         if current_word:
             return current_word.text
 
 
-    def check_current_word_matches_regex(self, pattern: str) -> bool:
-        current_word = self.get_current_word()
+    def _get_text(self) -> str:
+        return self.text[:-1]
+
+
+    def _dump_text(self) -> str:
+        text = self._get_text()
+        self.clear_text_buffer()
+        return text
+
+
+    def _get_sentence_left(self) -> list[Word]:
+        current_word = self._get_current_word()
+        if not current_word:
+            return []
+        left_words = []
+        while True:
+            matches = [w for w in self.words if w.bbox[2] <= current_word.bbox[0] and w.bbox[1] <= self.cursor[1] <= w.bbox[3]]
+            if not matches:
+                break
+            next_left = max(matches, key=lambda w: w.bbox[0])
+            height_next = next_left.bbox[3] - next_left.bbox[1]
+            height_current = current_word.bbox[3] - current_word.bbox[1]
+            if abs(height_next - height_current) / max(height_next, height_current) > 0.1:
+                break
+            gap = current_word.bbox[0] - next_left.bbox[2]
+            if gap > height_current:
+                break
+            left_words.append(next_left)
+            current_word = next_left
+        left_words.reverse()
+        return left_words
+
+
+    def _get_sentence_right(self) -> list[Word]:
+        current_word = self._get_current_word()
+        if not current_word:
+            return []
+        right_words = []
+        while True:
+            matches = [w for w in self.words if current_word.bbox[2] <= w.bbox[0] and w.bbox[1] <= self.cursor[1] <= w.bbox[3]]
+            if not matches:
+                break
+            next_right = min(matches, key=lambda w: w.bbox[0])
+            height_next = next_right.bbox[3] - next_right.bbox[1]
+            height_current = current_word.bbox[3] - current_word.bbox[1]
+            if abs(height_next - height_current) / max(height_next, height_current) > 0.1:
+                break
+            gap = next_right.bbox[0] - current_word.bbox[2]
+            if gap > height_current:
+                break
+            right_words.append(next_right)
+            current_word = next_right
+        return right_words
+
+
+    def check_current_word_matches_regex(self, pattern: str, fallback: bool = True) -> bool:
+        current_word = self._get_current_word()
         if not current_word:
             return False
         regex = re.compile(pattern, re.IGNORECASE)
         match = bool(regex.search(current_word.text))
-        return match
-
-
-    def check_current_word_does_not_match_regex(self, pattern: str) -> bool:
-        return not self.check_current_word_matches_regex(pattern)
+        return match if match else False if not fallback else self.check_current_word_matches_regex(normalize_text(pattern), False)
 
 
     def collect(self):
-        text = self.read_cursor()
+        text = self._read_cursor()
         if text:
             self.text += text + " "
 
 
-    def erase_text(self):
+    def clear_text_buffer(self):
         self.text = ""
-
-
-    def get_text(self) -> str:
-        return self.text[:-1]
-
-
-    def dump_text(self) -> str:
-        text = self.get_text()
-        self.erase_text()
-        return text
 
 
     def move_cursor_to_corner_left(self):
@@ -96,14 +137,21 @@ class WordSpace:
         self.cursor = (self.cursor[0], self.max_y)
 
 
-    def anchor_to_regex(self, pattern: str, occurrence: int = 0):
-        regex = re.compile(pattern)
-        matches = [word for word in self.words if regex.search(word.text)]
+    def anchor_to_regex(self, pattern: str, occurrence: int = 0, include_normalized: bool = True):
+        if include_normalized:
+            regex = re.compile(normalize_text(pattern))
+            matches = [word for word in self.words if regex.search(normalize_text(word.text))]
+        else:
+            regex = re.compile(pattern)
+            matches = [word for word in self.words if regex.search(word.text)]
         self._move_to_pos(matches, occurrence)
 
 
-    def anchor_to_text(self, text: str, occurrence: int = 0):
-        matches = [word for word in self.words if word.text == text]
+    def anchor_to_text(self, text: str, occurrence: int = 0, include_normalized: bool = True):
+        if include_normalized:
+            matches = [word for word in self.words if normalize_text(word.text) == normalize_text(text)]
+        else:
+            matches = [word for word in self.words if word.text == text]
         self._move_to_pos(matches, occurrence)
 
 
@@ -131,7 +179,7 @@ class WordSpace:
         self._move_to_pos(matches, words)
 
 
-    def move_above(self, words: int = 1):
+    def move_up(self, words: int = 1):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
@@ -153,7 +201,7 @@ class WordSpace:
         self._move_to_pos(matches, words)
 
 
-    def move_below(self, words: int = 1):
+    def move_down(self, words: int = 1):
         cx, cy = self.cursor
         matches: list[Word] = []
         for word in self.words:
@@ -162,6 +210,16 @@ class WordSpace:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[1])
         self._move_to_pos(matches, words)
+
+
+    def move_first(self):
+        if self.words:
+            self._move_to_word(self.words[0])
+
+
+    def move_last(self):
+        if self.words:
+            self._move_to_word(self.words[-1])
 
 
     def move_next(self, words: int = 1):
@@ -176,54 +234,46 @@ class WordSpace:
         self._move_to_pos(self.words, pos + words)
 
 
-    def collect_sentence(self, add_left_words: bool=True):
-        for word in self.get_current_sentence(add_left_words):
-            text = word.text
-            self.text += text + " "
-
-
-    def get_current_sentence(self, add_left_words: bool=True) -> list[Word]:
+    def move_previous(self, words: int = 1):
         cx, cy = self.cursor
-        current_word = None
-        for word in self.words:
+        pos = -1
+        for idx, word in enumerate(self.words):
             x0, y0, x1, y1 = word.bbox
             if x0 <= cx <= x1 and y0 <= cy <= y1:
-                current_word = word
-                break
-        if not current_word:
-            return []
-        left_words = []
-        if add_left_words:
-            current = current_word
-            while True:
-                matches = [w for w in self.words if w.bbox[2] <= current.bbox[0] and w.bbox[1] <= cy <= w.bbox[3]]
-                if not matches:
-                    break
-                next_left = max(matches, key=lambda w: w.bbox[0])
-                height_next = next_left.bbox[3] - next_left.bbox[1]
-                height_current = current.bbox[3] - current.bbox[1]
-                if abs(height_next - height_current) / max(height_next, height_current) > 0.1:
-                    break
-                gap = current.bbox[0] - next_left.bbox[2]
-                if gap > height_current:
-                    break
-                left_words.append(next_left)
-                current = next_left
-        left_words.reverse()
-        right_words = []
-        current = current_word
-        while True:
-            matches = [w for w in self.words if current.bbox[2] <= w.bbox[0] and w.bbox[1] <= cy <= w.bbox[3]]
-            if not matches:
-                break
-            next_right = min(matches, key=lambda w: w.bbox[0])
-            height_next = next_right.bbox[3] - next_right.bbox[1]
-            height_current = current.bbox[3] - current.bbox[1]
-            if abs(height_next - height_current) / max(height_next, height_current) > 0.1:
-                break
-            gap = next_right.bbox[0] - current.bbox[2]
-            if gap > height_current:
-                break
-            right_words.append(next_right)
-            current = next_right
-        return left_words + [current_word] + right_words
+                pos = idx
+        if pos == -1:
+            return
+        self._move_to_pos(self.words, pos - words)
+
+
+    def move_to_sentence_begin(self):
+        sentence_left = self._get_sentence_left()
+        if sentence_left:
+            self._move_to_word(sentence_left[0])
+
+
+    def move_to_sentence_end(self):
+        sentence_right = self._get_sentence_right()
+        if sentence_right:
+            self._move_to_word(sentence_right[-1])
+
+
+    def collect_trailing_sentence(self):
+        sentence_right = self._get_sentence_right()
+        for word in sentence_right:
+            self.text += word.text + " "
+        self.collect()
+
+
+    def collect_leading_sentence(self):
+        self.collect()
+        sentence_left = self._get_sentence_left()
+        for word in sentence_left:
+            self.text += word.text + " "
+
+
+    def collect_whole_sentence(self):
+        self.collect_leading_sentence()
+        sentence_right = self._get_sentence_right()
+        for word in sentence_right:
+            self.text += word.text + " "
