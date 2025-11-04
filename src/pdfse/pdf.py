@@ -78,7 +78,7 @@ def generate_marked_image(pdf_path: Path) -> bytes:
     return image_bytes
 
 
-def get_pdf_wordspace(pdf_path: Path, scale: float = 1000) -> WordSpace:
+def get_pdf_wordspace(pdf_path: Path) -> WordSpace:
     """
     Create a WordSpace object from a PDF
     """
