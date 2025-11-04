@@ -7,7 +7,7 @@ from dataclasses import dataclass
 @dataclass
 class Entry:
     label: str
-    schema: dict[str, str]
+    extraction_schema: dict[str, str]
     pdf_path: Path
 
 app = typer.Typer()
@@ -42,14 +42,14 @@ def extract(
         for entry in data:
             try:
                 label = entry["label"]
-                schema = entry["extraction_schema"]
+                extraction_schema = entry["extraction_schema"]
                 pdf_relative = entry["pdf_path"]
 
                 # Check types
                 if not isinstance(label, str):
                     raise ValueError(f"Invalid type for 'label': expected str, got {type(label).__name__}")
-                if not isinstance(schema, dict):
-                    raise ValueError(f"Invalid type for 'extraction_schema': expected dict, got {type(schema).__name__}")
+                if not isinstance(extraction_schema, dict):
+                    raise ValueError(f"Invalid type for 'extraction_schema': expected dict, got {type(extraction_schema).__name__}")
                 if not isinstance(pdf_relative, str):
                     raise ValueError(f"Invalid type for 'pdf_path': expected str, got {type(pdf_relative).__name__}")
 
@@ -59,7 +59,7 @@ def extract(
                     typer.secho(f"Error: PDF not found at {pdf_path}. Aborting.", fg=typer.colors.RED)
                     raise typer.Exit(code=1)
 
-                entries.append(Entry(label, schema, pdf_path))
+                entries.append(Entry(label, extraction_schema, pdf_path))
 
             except KeyError as err:
                 typer.secho(f"Error: Missing key in entry - {err}. Aborting.", fg=typer.colors.RED)
