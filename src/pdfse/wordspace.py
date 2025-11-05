@@ -137,7 +137,7 @@ class WordSpace:
             word_texts = [word.text for word in self.words]
             regex_pattern = pattern
 
-        full_text = ' '.join(word_texts)
+        full_text = " ".join(word_texts)
         regex = re.compile(regex_pattern, re.IGNORECASE)
 
         word_starts = []
