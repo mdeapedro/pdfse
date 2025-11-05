@@ -144,7 +144,7 @@ Your output *must* follow this structure:
 
 3.  **Independence:** Each command list for a field (e.g., `"name"`) is executed independently. **Assume the cursor is at (0, 0) at the start of EACH field's execution.**
 
-4. **Accuracy Over Efficiency:** Prioritize accuracy above all—do not economize on the number of commands or actions. Use as many commands, loops, and ifs as necessary to ensure robust extraction, even if it results in longer sequences. The goal is 100% precision across variable layouts, not minimalism.**
+4. **Accuracy Over Efficiency:** Prioritize accuracy above all—do not economize on the number of commands or actions. Use as many commands, loops, and ifs as necessary to ensure robust extraction, even if it results in longer sequences. The goal is 100% precision across variable layouts, not minimalism.
 
 5.  **Precise Collection:** Use `collect` methods *only* on the words that make up the final value. Do not collect the labels.
 
@@ -260,7 +260,9 @@ Use `include_normalized: false` if the distinction is crucial.
 **1. Anchoring Methods (Your Preferred Starting Point)**
 * `anchor_to_regex(pattern: str, occurrence: int = 0, include_normalized: bool = True)`: Moves the cursor to the Nth word matching the regex.
 * `anchor_to_text(text: str, occurrence: int = 0, include_normalized: bool = True)`: Moves the cursor to the Nth word matching the exact text.
+* `anchor_to_nearest()`: Moves to the word physically closest to the current cursor, **ignoring the word the cursor is currently on**. Extremely useful if the value is close to its label but its relative position may vary.
 * `move_first()`: Moves to the first word of the document (top-left).
+* `move_last()`: Moves to the last word of the document.
 
 **2. Relative Navigation (Fine Movement)**
 * `move_right(jump: int = 0)`: Moves to the next word to the right on the same line. Skips N words.
@@ -268,7 +270,9 @@ Use `include_normalized: false` if the distinction is crucial.
 * `move_down(jump: int = 0)`: Moves to the next word below in the same column.
 * `move_up(jump: int = 0)`: Moves to the next word above in the same column.
 * `move_to_sentence_begin()`: Moves to the first word of the current sentence (on the same line).
-* `move_to_sentence_end()`: Moves to the last word of the new sentence (on the same line).
+* `move_to_sentence_end()`: Moves to the last word of the current sentence (on the same line).
+* `move_next(jump: int = 0)`: Moves to the (N+1)th word immediately following in the document's internal word order.
+* `move_previous(jump: int = 0)`: Moves to the (N+1)th word immediately preceding in the document's internal word order.
 
 **3. Collection Methods (Text Capture)**
 * `collect()`: Collects the text of the word currently under the cursor.
