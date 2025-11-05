@@ -20,7 +20,7 @@ def _encode_image_to_base64(imageb: bytes) -> str:
     return f"data:image/png;base64,{base64_string}"
 
 
-async def ask_for_heuristic(
+async def fetch_heuristic(
     extraction_schema: dict,
     imagesb: list[bytes]
 ) -> dict[str, list]:
