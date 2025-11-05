@@ -102,6 +102,10 @@ class WordSpace:
         return right_words
 
 
+    def reset_cursor(self):
+        self.cursor = (0.0, 0.0)
+
+
     def check_current_word_matches_regex(self, pattern: str, fallback: bool = True) -> bool:
         current_word = self._get_current_word()
         if not current_word:
@@ -123,22 +127,6 @@ class WordSpace:
 
     def clear_text_buffer(self):
         self.text = ""
-
-
-    def move_cursor_to_corner_left(self):
-        self.cursor = (0.0, self.cursor[1])
-
-
-    def move_cursor_to_corner_right(self):
-        self.cursor = (self.max_x, self.cursor[1])
-
-
-    def move_cursor_to_corner_top(self):
-        self.cursor = (self.cursor[0], 0.0)
-
-
-    def move_cursor_to_corner_bottom(self):
-        self.cursor = (self.cursor[0], self.max_y)
 
 
     def anchor_to_regex(self, pattern: str, occurrence: int = 0, include_normalized: bool = True):
@@ -203,14 +191,23 @@ class WordSpace:
     def anchor_to_nearest(self):
         if not self.words:
             return
-        nearest_word = self.words[0]
+
+        current_word = self._get_current_word()
+
+        nearest_word = None
         min_sq_dist = 1e18
+
         for word in self.words:
+            if word == current_word:
+                continue
+
             sq_dist = point_to_bbox_squared_distance(self.cursor, word.bbox)
             if (sq_dist < min_sq_dist):
                 nearest_word = word
                 min_sq_dist = sq_dist
-        self._move_to_word(nearest_word)
+
+        if nearest_word:
+            self._move_to_word(nearest_word)
 
 
     def move_left(self, jump: int = 0):
@@ -229,6 +226,7 @@ class WordSpace:
         matches.sort(key=lambda word: word.bbox[0], reverse=True)
         self._move_to_pos(matches, jump)
 
+
     def move_up(self, jump: int = 0):
         current_word = self._get_current_word()
         if current_word:
@@ -245,6 +243,7 @@ class WordSpace:
         matches.sort(key=lambda word: word.bbox[1], reverse=True)
         self._move_to_pos(matches, jump)
 
+
     def move_right(self, jump: int = 0):
         current_word = self._get_current_word()
         if current_word:
@@ -260,6 +259,7 @@ class WordSpace:
                 matches.append(word)
         matches.sort(key=lambda word: word.bbox[0])
         self._move_to_pos(matches, jump)
+
 
     def move_down(self, jump: int = 0):
         current_word = self._get_current_word()

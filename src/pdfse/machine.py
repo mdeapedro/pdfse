@@ -22,10 +22,6 @@ class HeuristicMachine:
             "collect_leading_sentence": wordspace.collect_leading_sentence,
             "collect_whole_sentence": wordspace.collect_whole_sentence,
             "clear_text_buffer": wordspace.clear_text_buffer,
-            "move_cursor_to_corner_left": wordspace.move_cursor_to_corner_left,
-            "move_cursor_to_corner_right": wordspace.move_cursor_to_corner_right,
-            "move_cursor_to_corner_top": wordspace.move_cursor_to_corner_top,
-            "move_cursor_to_corner_bottom": wordspace.move_cursor_to_corner_bottom,
             "move_last": wordspace.move_last,
         }
         self.checks: dict[str, Callable[..., bool]] = {
@@ -103,8 +99,7 @@ class HeuristicMachine:
             return extracted_schema
 
         for field, commands in heuristic.items():
-            self.wordspace.move_cursor_to_corner_top()
-            self.wordspace.move_cursor_to_corner_left()
+            self.wordspace.reset_cursor()
             self.wordspace.clear_text_buffer()
 
             try:
