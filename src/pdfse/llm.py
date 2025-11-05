@@ -11,7 +11,7 @@ _client: openai.AsyncOpenAI | None = None
 def get_client() -> openai.AsyncOpenAI:
     global _client
     if not _client:
-        _client = openai.AsyncOpenAI(timeout=300.0)
+        _client = openai.AsyncOpenAI()
     return _client
 
 
@@ -52,7 +52,6 @@ async def fetch_heuristic(
             {"role": "user", "content": user_content} # type: ignore
         ],
         response_format={"type": "json_object"},
-        max_completion_tokens=4096
     )
     response_content = response.choices[0].message.content
     if not response_content:
@@ -93,7 +92,7 @@ Your output *must* follow this structure:
 1.  **CRITICAL: Handle Layout Variability.**
     * Documents with the same `label` can have **radically different layouts**. You might receive multiple images (e.g., 3 examples) that look different but share the same *label*.
     * Your task is to find the **common, constant elements** (i.e., text labels) that exist across all examples and use them as your starting point.
-    * **ALWAYS** start with an anchor (`anchor_to_text` or `anchor_to_regex`) to lock onto a fixed *label* (e.g., "Name:", "CPF:", "Inscrição").
+    * **ALWAYS** start with an anchor (`anchor_to_text` or `anchor_to_regex` or `move_first` etc) to lock onto a fixed *label* (e.g., "Name:", "CPF:", "Inscrição").
     * **NEVER** use fragile navigation from the top-left (e.g., `move_first() -> move_down() -> move_down()`). This will fail 100% of the time if the layout changes.
     * All navigation *must* be relative to a strong, constant text anchor.
 
