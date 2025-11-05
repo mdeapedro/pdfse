@@ -11,12 +11,12 @@ _client: openai.AsyncOpenAI | None = None
 def get_client() -> openai.AsyncOpenAI:
     global _client
     if not _client:
-        _client = openai.AsyncOpenAI()
+        _client = openai.AsyncOpenAI(timeout=600.0)
     return _client
 
 
 def _encode_image_to_base64(imageb: bytes) -> str:
-    base64_string = base64.b64encode(imageb).decode('utf-8')
+    base64_string = base64.b64encode(imageb).decode("utf-8")
     return f"data:image/png;base64,{base64_string}"
 
 
