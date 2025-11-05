@@ -32,10 +32,11 @@ async def _fetch_heuristic_for_task(label: str, schema_to_fetch: ExtractionSchem
 
 async def fetch_and_save_missing_heuristics(
     bad_entries: list[Entry],
-    heuristics: Heuristics
+    heuristics: Heuristics,
+    samples: int
 ) -> Heuristics:
 
-    llm_tasks: list[LLMTask] = prepare_llm_tasks(bad_entries, heuristics)
+    llm_tasks: list[LLMTask] = prepare_llm_tasks(bad_entries, heuristics, samples)
 
     if not llm_tasks:
         return heuristics
@@ -97,7 +98,7 @@ def process_entry(entry: Entry, heuristics: Heuristics) -> dict[str, str | None]
         return {field: None for field in entry.extraction_schema}
 
 
-async def run_extraction(dataset: Path, output: Path) -> None:
+async def run_extraction(dataset: Path, output: Path, samples: int) -> None:
     entries = load_dataset(dataset)
     heuristics = load_heuristics_cache()
 
@@ -106,7 +107,7 @@ async def run_extraction(dataset: Path, output: Path) -> None:
     results: list[dict | None] = [None] * len(entries)
 
     llm_task = asyncio.create_task(
-        fetch_and_save_missing_heuristics(bad_entries, heuristics)
+        fetch_and_save_missing_heuristics(bad_entries, heuristics, samples)
     )
 
     for entry in good_entries:

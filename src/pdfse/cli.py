@@ -21,9 +21,15 @@ def extract(
         "-o",
         help="Path to save the results as JSON",
         writable=True
-    )]
+    )],
+    samples: Annotated[int, typer.Option(
+        "--samples",
+        "-s",
+        help="Number of sample PDFs to send to the LLM for heuristic generation",
+        min=1,
+    )] = 3
 ):
-    asyncio.run(run_extraction(dataset, output))
+    asyncio.run(run_extraction(dataset, output, samples))
 
 
 if __name__ == "__main__":

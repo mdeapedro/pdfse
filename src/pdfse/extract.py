@@ -46,7 +46,7 @@ def separate_good_bad_entries(entries: list[Entry], heuristics: Heuristics) -> t
         rich.print(f"‧ Need heuristics for {len(bad_entries)} entries")
     return good_entries, bad_entries
 
-def prepare_llm_tasks(bad_entries: list[Entry], heuristics: Heuristics) -> list[LLMTask]:
+def prepare_llm_tasks(bad_entries: list[Entry], heuristics: Heuristics, samples: int) -> list[LLMTask]:
     unknown_label_fields: dict[str, ExtractionSchema] = get_unknown_label_fields(bad_entries, heuristics)
     tasks = []
 
@@ -60,7 +60,7 @@ def prepare_llm_tasks(bad_entries: list[Entry], heuristics: Heuristics) -> list[
         if label in label_to_entries_map:
             all_paths_for_label = list(set(entry.pdf_path for entry in label_to_entries_map[label]))
 
-            k = min(len(all_paths_for_label), 3)
+            k = min(len(all_paths_for_label), samples)
             selected_paths = random.sample(all_paths_for_label, k)
 
             tasks.append(LLMTask(
