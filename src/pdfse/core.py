@@ -1,6 +1,7 @@
 import asyncio
 import json
 import rich
+import rich.progress as rp
 from pathlib import Path
 
 from .models import Entry, Heuristics, ExtractionSchema, LLMTask
@@ -45,8 +46,13 @@ async def fetch_and_save_missing_heuristics(
             _fetch_heuristic_for_task(task.label, task.schema_to_fetch, task.pdf_paths)
         )
 
-    rich.print(f"→ Fetching {len(tasks)} new heuristics from LLM...")
-    results = await asyncio.gather(*tasks)
+    with rp.Progress(
+        rp.SpinnerColumn(),
+        rp.TextColumn("[progress.description]{task.description}"),
+        transient=True,
+    ) as progress:
+        progress.add_task(description=f"Fetching {len(tasks)} new heuristics from LLM...", total=None)
+        results = await asyncio.gather(*tasks)
 
     updated_heuristics = heuristics.copy()
     has_new_data = False

@@ -68,7 +68,7 @@ def prepare_llm_tasks(bad_entries: list[Entry], heuristics: Heuristics) -> list[
                 schema_to_fetch=schema_to_fetch,
                 pdf_paths=selected_paths
             ))
-            rich.print(f"‧ Label '{label}': queuing {len(schema_to_fetch)} fields for heuristic generation using {k} PDF(s).")
+            rich.print(f"→ Label '{label}': queuing {len(schema_to_fetch)} fields for heuristic generation using {k} PDF(s).")
         else:
             rich.print(f"[yellow]! Warning: No PDF found for bad entry label {label}. Skipping.")
 
