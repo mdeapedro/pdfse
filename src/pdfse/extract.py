@@ -31,6 +31,17 @@ def save_heuristic_cache(heuristics: Heuristics):
     except IOError as e:
         rich.print(f"[red]✗ Could not write to heuristics cache: {e}")
 
+def clear_heuristics_cache():
+    if not CACHE_FILE.exists():
+        rich.print("[yellow]! Heuristics cache file not found. Nothing to clear.")
+        return
+
+    try:
+        CACHE_FILE.unlink()
+        rich.print(f"[green]✓ Heuristics cache file deleted: {CACHE_FILE}")
+    except Exception as e:
+        rich.print(f"[red]✗ Could not delete heuristics cache: {e}")
+
 def separate_good_bad_entries(entries: list[Entry], heuristics: Heuristics) -> tuple[list[Entry], list[Entry]]:
     good_entries = []
     bad_entries = []

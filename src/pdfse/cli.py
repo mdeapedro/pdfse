@@ -1,9 +1,9 @@
 import typer
 import asyncio
-import rich
 from pathlib import Path
 from typing_extensions import Annotated
 from pdfse.core import run_extraction
+from pdfse.extract import clear_heuristics_cache
 
 app = typer.Typer()
 
@@ -29,7 +29,21 @@ def extract(
         min=1,
     )] = 3
 ):
+    """
+    Extracts data from PDFs based on a dataset file.
+
+    It uses cached heuristics if available, or generates new ones
+    via LLM if they are missing for a specific document label.
+    """
     asyncio.run(run_extraction(dataset, output, samples))
+
+
+@app.command()
+def clear():
+    """
+    Clears the saved heuristics cache file.
+    """
+    clear_heuristics_cache()
 
 
 if __name__ == "__main__":
