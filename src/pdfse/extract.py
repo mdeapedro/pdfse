@@ -27,7 +27,7 @@ def load_heuristics_cache() -> Heuristics:
 def save_heuristic_cache(heuristics: Heuristics):
     try:
         with open(CACHE_FILE, "w") as f:
-            json.dump(heuristics, f)
+            json.dump(heuristics, f, ensure_ascii=False)
     except IOError as e:
         rich.print(f"[red]✗ Could not write to heuristics cache: {e}")
 
