@@ -103,7 +103,6 @@ async def run_extraction(dataset: Path, output: Path) -> None:
         fetch_and_save_missing_heuristics(bad_entries, heuristics)
     )
 
-    rich.print(f"→ Processing {len(good_entries)} entries with cached heuristics...")
     for entry in good_entries:
         extracted_data = await asyncio.to_thread(process_entry, entry, heuristics)
         results[entry.id - 1] = {
@@ -111,10 +110,10 @@ async def run_extraction(dataset: Path, output: Path) -> None:
             "pdf_path": str(entry.pdf_path.relative_to(dataset.parent)),
             "extraction": extracted_data
         }
+        rich.print(f"[green]✓ Entry #{entry.id} executed (cache)")
 
     updated_heuristics = await llm_task
 
-    rich.print(f"→ Processing {len(bad_entries)} entries with new/updated heuristics...")
     for entry in bad_entries:
         extracted_data = await asyncio.to_thread(process_entry, entry, updated_heuristics)
         results[entry.id - 1] = {
@@ -122,8 +121,9 @@ async def run_extraction(dataset: Path, output: Path) -> None:
             "pdf_path": str(entry.pdf_path.relative_to(dataset.parent)),
             "extraction": extracted_data
         }
+        rich.print(f"[green]✓ Entry #{entry.id} executed")
 
-    with open(output, 'w', encoding='utf-8') as f:
+    with open(output, "w") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
     rich.print(f"[green]✓ Extraction complete. Results saved to {output}")
