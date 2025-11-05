@@ -18,7 +18,7 @@ dependencies = [
 packages = [{include = "pdfse", from = "src"}]
 
 [tool.poetry.scripts]
-start = "pdfse.cli:app"
+pdfse = "pdfse.cli:app"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
