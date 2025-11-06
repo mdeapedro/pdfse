@@ -27,7 +27,12 @@ def extract(
         "-s",
         help="Number of sample PDFs to send to the LLM for heuristic generation",
         min=1,
-    )] = 3
+    )] = 3,
+    image_mode: Annotated[bool, typer.Option(
+        "--image-mode",
+        help="Use image-based (PNG) samples for the LLM instead of text.",
+        is_flag=True,
+    )] = False
 ):
     """
     Extracts data from PDFs based on a dataset file.
@@ -35,7 +40,7 @@ def extract(
     It uses cached heuristics if available, or generates new ones
     via LLM if they are missing for a specific document label.
     """
-    asyncio.run(run_extraction(dataset, output, samples))
+    asyncio.run(run_extraction(dataset, output, samples, image_mode))
 
 
 @app.command()

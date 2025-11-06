@@ -12,18 +12,29 @@ from .extract import (
     prepare_llm_tasks,
     save_heuristic_cache
 )
-from .pdf import render_pdf_text, get_pdf_wordspace
+from .pdf import render_pdf_text, get_pdf_wordspace, get_pdf_text_layout
 from .llm import fetch_heuristic
 from .machine import HeuristicMachine
 
 
-async def _fetch_heuristic_for_task(label: str, schema_to_fetch: ExtractionSchema, pdf_paths: list[Path]) -> tuple[str, dict]:
+async def _fetch_heuristic_for_task(
+    label: str,
+    schema_to_fetch: ExtractionSchema,
+    pdf_paths: list[Path],
+    image_mode: bool
+) -> tuple[str, dict]:
     try:
-        render_tasks = [asyncio.to_thread(render_pdf_text, pdf_path) for pdf_path in pdf_paths]
-        image_bytes_list = await asyncio.gather(*render_tasks)
+        if image_mode:
+            # Use image samples
+            render_tasks = [asyncio.to_thread(render_pdf_text, pdf_path) for pdf_path in pdf_paths]
+            samples_data = await asyncio.gather(*render_tasks) # list[bytes]
+        else:
+            # Use text samples
+            text_tasks = [asyncio.to_thread(get_pdf_text_layout, pdf_path) for pdf_path in pdf_paths]
+            samples_data = await asyncio.gather(*text_tasks) # list[str]
 
         new_heuristic_for_label = await fetch_heuristic(
-            schema_to_fetch, image_bytes_list
+            schema_to_fetch, samples_data, image_mode
         )
         return label, new_heuristic_for_label
     except Exception as e:
@@ -33,7 +44,8 @@ async def _fetch_heuristic_for_task(label: str, schema_to_fetch: ExtractionSchem
 async def fetch_and_save_missing_heuristics(
     bad_entries: list[Entry],
     heuristics: Heuristics,
-    samples: int
+    samples: int,
+    image_mode: bool
 ) -> Heuristics:
 
     llm_tasks: list[LLMTask] = prepare_llm_tasks(bad_entries, heuristics, samples)
@@ -44,7 +56,9 @@ async def fetch_and_save_missing_heuristics(
     tasks = []
     for task in llm_tasks:
         tasks.append(
-            _fetch_heuristic_for_task(task.label, task.schema_to_fetch, task.pdf_paths)
+            _fetch_heuristic_for_task(
+                task.label, task.schema_to_fetch, task.pdf_paths, image_mode
+            )
         )
 
     with rp.Progress(
@@ -98,7 +112,7 @@ def process_entry(entry: Entry, heuristics: Heuristics) -> dict[str, str | None]
         return {field: None for field in entry.extraction_schema}
 
 
-async def run_extraction(dataset: Path, output: Path, samples: int) -> None:
+async def run_extraction(dataset: Path, output: Path, samples: int, image_mode: bool) -> None:
     entries = load_dataset(dataset)
     heuristics = load_heuristics_cache()
 
@@ -107,7 +121,7 @@ async def run_extraction(dataset: Path, output: Path, samples: int) -> None:
     results: list[dict | None] = [None] * len(entries)
 
     llm_task = asyncio.create_task(
-        fetch_and_save_missing_heuristics(bad_entries, heuristics, samples)
+        fetch_and_save_missing_heuristics(bad_entries, heuristics, samples, image_mode)
     )
 
     for entry in good_entries:

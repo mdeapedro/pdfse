@@ -54,6 +54,15 @@ def render_pdf_text(pdf_path: Path) -> bytes:
     new_doc.close()
     return image_bytes
 
+
+def get_pdf_text_layout(pdf_path: Path) -> str:
+    doc = fitz.open(pdf_path)
+    page = doc[0]
+    text = page.get_text("text", sort=True)
+    doc.close()
+    return text # type: ignore
+
+
 def generate_marked_image(pdf_path: Path) -> bytes:
     """
     Render the PDF with its words surrounded by red rectangles.
