@@ -31,16 +31,42 @@ def save_heuristic_cache(heuristics: Heuristics):
     except IOError as e:
         rich.print(f"[red]✗ Could not write to heuristics cache: {e}")
 
-def clear_heuristics_cache():
+def clear_heuristics_cache(
+    all_flag: bool = False,
+    labels_to_clear: list[str] | None = None
+):
     if not CACHE_FILE.exists():
         rich.print("[yellow]! Heuristics cache file not found. Nothing to clear.")
         return
 
-    try:
-        CACHE_FILE.unlink()
-        rich.print(f"[green]✓ Heuristics cache file deleted: {CACHE_FILE}")
-    except Exception as e:
-        rich.print(f"[red]✗ Could not delete heuristics cache: {e}")
+    if all_flag:
+        try:
+            CACHE_FILE.unlink()
+            rich.print(f"[green]✓ Heuristics cache file deleted: {CACHE_FILE}")
+        except Exception as e:
+            rich.print(f"[red]✗ Could not delete heuristics cache: {e}")
+        return
+
+    if labels_to_clear:
+        heuristics = load_heuristics_cache()
+        if not heuristics:
+            rich.print("[yellow]! Heuristics cache is empty. Nothing to clear.")
+            return
+
+        labels_removed_count = 0
+        for label in labels_to_clear:
+            if label in heuristics:
+                heuristics.pop(label)
+                rich.print(f"[green]✓ Removed heuristic for label: '{label}'")
+                labels_removed_count += 1
+            else:
+                rich.print(f"[yellow]! Heuristic for label '{label}' not found. Skipping.")
+
+        if labels_removed_count > 0:
+            save_heuristic_cache(heuristics)
+            rich.print(f"[green]✓ Heuristics cache updated. Removed {labels_removed_count} label(s).")
+        else:
+            rich.print("‧ No matching heuristics found to remove.")
 
 def separate_good_bad_entries(entries: list[Entry], heuristics: Heuristics) -> tuple[list[Entry], list[Entry]]:
     good_entries = []

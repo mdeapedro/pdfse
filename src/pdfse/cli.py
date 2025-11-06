@@ -1,5 +1,6 @@
 import typer
 import asyncio
+import rich
 from pathlib import Path
 from typing_extensions import Annotated
 from pdfse.core import run_extraction
@@ -44,11 +45,29 @@ def extract(
 
 
 @app.command()
-def clear():
+def clear(
+    all_flag: Annotated[bool, typer.Option(
+        "--all",
+        help="Clear the entire heuristics cache.",
+        is_flag=True,
+    )] = False,
+    labels: Annotated[list[str], typer.Option(
+        "--label",
+        "-l",
+        help="Clear only the specified label(s) from the cache. Can be used multiple times.",
+    )] = []
+):
     """
     Clears the saved heuristics cache file.
+
+    Use --all to clear everything, or --label to clear specific entries.
     """
-    clear_heuristics_cache()
+    if all_flag:
+        clear_heuristics_cache(all_flag=True)
+    elif labels:
+        clear_heuristics_cache(labels_to_clear=labels)
+    else:
+        rich.print("[yellow]! No action specified. Use --all to clear everything or --label <name> to clear specific labels.")
 
 
 if __name__ == "__main__":
